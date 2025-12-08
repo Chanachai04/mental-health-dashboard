@@ -19,7 +19,7 @@ import { th } from "date-fns/locale"; // Import Thai locale for date-fns
 import { Calendar, Search } from "lucide-react"; // Using lucide-react for icons
 
 // Base URL for your backend API
-const API_BASE_URL = "http://localhost:5151/api"; // Make sure this matches your backend server's address
+const API_BASE_URL = "http://119.59.118.120:5151/api"; // Make sure this matches your backend server's address
 
 // Colors for charts
 const COLORS = [

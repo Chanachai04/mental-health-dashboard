@@ -1,11 +1,88 @@
-import express from "express";
-import cors from "cors";
+const express = require("express");
+const cors = require("cors");
+const mysql = require("mysql2");
+require("dotenv").config();
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-app.listen(5151, () => {
-  console.log("Server is running on port 5151");
+// สร้างการเชื่อมต่อ database
+const db = mysql.createConnection({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
 });
+
+// เชื่อมต่อ database
+db.connect((err) => {
+  if (err) {
+    console.error("Database connection failed:", err);
+    return;
+  }
+  console.log("Connected to MySQL database");
+});
+
+// API endpoint สำหรับดึงข้อมูลโพสต์
+app.get("/api/posts", (req, res) => {
+  const { startDate, endDate, platform, searchTerm } = req.query;
+
+  let query = "SELECT id, username, caption, platform, baseurl, created_at as createAt FROM mental_health WHERE 1=1";
+  const params = [];
+
+  if (startDate) {
+    query += " AND created_at >= ?";
+    params.push(startDate);
+  }
+
+  if (endDate) {
+    query += " AND created_at <= ?";
+    params.push(endDate);
+  }
+
+  if (platform && platform !== "ทั้งหมด") {
+    query += " AND platform = ?";
+    params.push(platform);
+  }
+
+  if (searchTerm) {
+    query += " AND caption LIKE ?";
+    params.push(`%${searchTerm}%`);
+  }
+
+  query += " ORDER BY created_at DESC";
+
+  db.query(query, params, (err, results) => {
+    if (err) {
+      console.error("Error fetching posts:", err);
+      return res.status(500).json({ error: "Failed to fetch posts", details: err.message });
+    }
+    res.json(results);
+  });
+});
+
+
+const PORT = process.env.PORT || 5151;
+const HOST = process.env.HOST || '0.0.0.0';
+
+app.listen(PORT, HOST, () => {
+  console.log(`Server is running on port ${PORT}`);
+  console.log(`Local: http://localhost:${PORT}`);
+  console.log(`Network: http://${getLocalIP()}:${PORT}`);
+});
+
+// ฟังก์ชันหา IP Address
+function getLocalIP() {
+  const os = require('os');
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return 'localhost';
+}
