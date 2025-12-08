@@ -313,8 +313,6 @@ function App() {
             className="p-2 border border-gray-300  rounded-md bg-gray-50  text-gray-900  focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="ทั้งหมด">ทั้งหมด</option>
-            <option value="facebook">Facebook</option>
-            <option value="instagram">Instagram</option>
             <option value="twitter">X</option>
             <option value="tiktok">TikTok</option>
           </select>
