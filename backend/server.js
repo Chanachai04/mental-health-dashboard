@@ -8,21 +8,27 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// สร้างการเชื่อมต่อ database
-const db = mysql.createConnection({
+// สร้าง connection pool แทน single connection
+const db = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0
 });
 
-// เชื่อมต่อ database
-db.connect((err) => {
+// ทดสอบการเชื่อมต่อ
+db.getConnection((err, connection) => {
   if (err) {
     console.error("Database connection failed:", err);
     return;
   }
   console.log("Connected to MySQL database");
+  connection.release();
 });
 
 // API endpoint สำหรับดึงข้อมูลโพสต์
@@ -57,7 +63,16 @@ app.get("/api/posts", (req, res) => {
   db.query(query, params, (err, results) => {
     if (err) {
       console.error("Error fetching posts:", err);
-      return res.status(500).json({ error: "Failed to fetch posts", details: err.message });
+      
+      // ถ้าเป็น connection error ให้ลอง reconnect
+      if (err.fatal) {
+        console.log("Fatal error detected, connection pool will handle reconnection");
+      }
+      
+      return res.status(500).json({ 
+        error: "Failed to fetch posts", 
+        details: err.message 
+      });
     }
     res.json(results);
   });
